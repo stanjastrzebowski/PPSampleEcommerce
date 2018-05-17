@@ -1,6 +1,6 @@
 <?php
 
-function curl_call_api($endpoint, $payload, $access_token_ready)
+    function CurlCallAPI($endpoint, $payload, $access_token_ready)
     {
         global $client;
         global $secret;

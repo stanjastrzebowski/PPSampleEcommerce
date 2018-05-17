@@ -44,71 +44,9 @@
         }
     }
 
-    /*
-    function curl_call_api($endpoint, $payload, $access_token_ready)
-    {
-        global $client;
-        global $secret;
-
-        $ch = curl_init();
-
-        curl_setopt($ch, CURLOPT_URL, $endpoint);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
-        curl_setopt($ch, CURLOPT_POST, 1);
-        // remove this option for production use as this is making the connection insecure
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-
-        $headers = array();
-
-        if ($access_token_ready == "") {
-            curl_setopt($ch, CURLOPT_USERPWD, $client . ":" . $secret);
-
-            $headers[] = "Accept: application/json";
-            $headers[] = "Accept-Language: en_US";
-            $headers[] = "Content-Type: application/x-www-form-urlencoded";
-        
-        } else {
-
-            $headers[] = "Content-Type: application/json";
-            $headers[] = "Authorization: Bearer ".$access_token_ready;
-        }
-
-        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-
-        $result = curl_exec($ch);
-        //print_r($result);
-        if (curl_errno($ch)) {
-            echo 'Error:' . curl_error($ch);
-            curl_close ($ch);
-            exit(1);
-        }
-        
-        curl_close ($ch);
-
-        $res = "";
-
-        try {
-            $res = json_decode($result, true);
-        } catch (Exception $e) {
-            throw new Exception('HipShop: ' .$e->getMessage());
-        }
-        
-        return $res;
-    }
-*/
-
-
 
     function PP_payment($user_action, $return_url)
     {
-
-        var_dump("testing error...");
-
-// add DEBUG option configurable in config file; explore var_dump and logging capabilities in PHP
-// add try {} catch {}
-// add payload to a separate JSON file; use another file with variables (item details, etc.); have a scvript that's dynamically replacing the $var1, $var2 etc in json; think about the dynamic JSON for a dynamic cart
-// check the deserialization of JSON response in payment.php into an object
 
         // the ClientID and secret values are stored in the settings.php file
         global $client;
@@ -119,11 +57,10 @@
 
         try {
 
-            $res = curl_call_api("https://api.sandbox.paypal.com/v1/oauth2/token", "grant_type=client_credentials", "");
+            $res = CurlCallAPI("https://api.sandbox.paypal.com/v1/oauth2/token", "grant_type=client_credentials", "");
             
             if (is_array($res)) {
                 foreach($res as $key => $value) {
-                    //$stringData .= "$key = $value <br/>";
                     if ($key == "access_token") {
                         $access_token = $value;
                     }
@@ -136,22 +73,16 @@
             echo 'HipShop: ' .$e->getMessage();
         }
 
-        //echo "</br>" . $stringData . "<br/>";
-        //echo "access_token: " . $access_token . "</br>";
-
         $_SESSION['access_token'] = $access_token;
    
         if ($user_action == 'continue') {
-            $invoice_number = "INV-".rand();
-            if (isset($_SESSION['invoice_number'])) {
-                unset($_SESSION['invoice_number']);
-            }
-            $_SESSION['invoice_number'] = $invoice_number;    
+            $invoice_number = GenerateInvoiceNumber();
+            $_SESSION['invoice_number'] = $invoice_number;
         } else {
             $invoice_number = $_SESSION['invoice_number'];
         }
 
-
+        // If we're coming from the PRODUCT page, use the payload specific to the PRODUCT
         if($_SERVER['REQUEST_METHOD'] == "POST" and isset($_POST['quantity']) and isset($_POST['size'])) {
 
             $product_size = $_POST['size'];
@@ -230,9 +161,8 @@
             }';
                 
         } 
-        else 
+        else // Multiple-item payload 
         {
-            // Multiple-item payload
             $json_data = '{
                 "intent": "sale",
                 "payer": {
@@ -318,7 +248,7 @@
 
         try {
 
-            $res = curl_call_api("https://api.sandbox.paypal.com/v1/payments/payment", $json_data, $access_token);
+            $res = CurlCallAPI("https://api.sandbox.paypal.com/v1/payments/payment", $json_data, $access_token);
             
             foreach($res["links"] as $elemarray) {
                 foreach($elemarray as $key => $value) {
@@ -343,26 +273,10 @@
         header("Location: ".$approval_url);
     }   
 
-
-
     
     function CheckoutMark()
     {
-/*
-        print $_POST['email_address']."</br>";    
-        print $_POST['mobile_phone']."</br>";        
-    
-        // shipping details
-        print $_POST['first_name']."</br>";
-        print $_POST['last_name']."</br>";
-        print $_POST['address_line1']."</br>";
-        print $_POST['address_line2']."</br>";
-        print $_POST['city']."</br>";
-        print $_POST['zipcode']."</br>";
-        print $_POST['state']."</br>";
-        print $_POST['country']."</br>";
-        //header("Location: summary.php");
-*/
+
         // shipping details
         $_SESSION['recipient_name'] = $_POST['first_name']." ".$_POST['last_name'];
         $_SESSION['line1']          = $_POST['address_line1'];
@@ -378,13 +292,22 @@
             $_SESSION['checkout-payment-mark'] = 1;
         }
 
-        $invoice_number = "INV-".rand();
-        if (isset($_SESSION['invoice_number'])) {
-            unset($_SESSION['invoice_number']);
-        }
+        $invoice_number = GenerateInvoiceNumber();
         $_SESSION['invoice_number'] = $invoice_number;
 
         header("Location: summary.php");
     }    
+
     
+    function GenerateInvoiceNumber()
+    {
+        $invoice_number = "INV-".rand();
+        if (isset($_SESSION['invoice_number'])) {
+            unset($_SESSION['invoice_number']);
+        }
+        //$_SESSION['invoice_number'] = $invoice_number;
+
+        return $invoice_number;
+    }
+
 ?>
