@@ -7,6 +7,7 @@
 <body>
 
 <!-- Navigation -->
+<!-- Navigation -->
 <?php include('include/navigation.php'); ?>
 
 <section class="jumbotron text-center">
