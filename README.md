@@ -12,8 +12,7 @@ Please see the below video walk-through where I describe the differences in chec
 ![Screenshot 2](img/preview_product.png)
 ![Screenshot 3](img/preview_checkout.png)
 
-## Video walk-through
-Best viewed at 1.5x ;-)
+## Video walk-through (Best viewed at 1.5x speed ;-))
 [![Click to play the video](http://img.youtube.com/vi/mW46rvQ5Pts/0.jpg)](https://www.youtube.com/watch?v=mW46rvQ5Pts "REST and be API")
 
 ## Notes
